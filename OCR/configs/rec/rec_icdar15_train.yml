@@ -1,0 +1,101 @@
+Global:
+  # 全局配置
+  use_gpu: true              # 是否使用 GPU 加速（关键配置）
+  epoch_num: 72             # 总训练轮数
+  log_smooth_window: 20      # 日志平滑窗口（减少波动）
+  print_batch_step: 10       # 每 10 个 batch 输出一次训练信息
+  save_model_dir: ./output/rec/ic15/  # 模型保存路径
+  save_epoch_step: 3          # 每 3 个 epoch 保存一次模型（例如第 3、6、9...epoch）
+  eval_batch_step: [0, 2000]   # 在第 0 步（初始）和每 2000 个 iteration 后评估模型
+  cal_metric_during_train: True  # 训练过程中实时计算指标
+  pretrained_model:
+  checkpoints:
+  save_inference_dir: ./
+  use_visualdl: False
+  infer_img: doc/imgs_words_en/word_10.png
+  # for data or label process
+  character_dict_path: ppocr/utils/en_dict.txt
+  character_type: EN
+  max_text_length: 25
+  infer_mode: False
+  use_space_char: False
+  save_res_path: ./output/rec/predicts_ic15.txt
+
+Optimizer:
+  # 优化器配置
+  name: Adam                  # 优化器类型（AdamW 是更优的选择）
+  beta1: 0.9, beta2: 0.999    # Adam 的超参数
+  lr:                         # 学习率配置
+    learning_rate: 0.0005      # 初始学习率（微调时建议更低，如 1e-5）
+  regularizer:                 # 正则化项（L2 正则化防止过拟合）
+    name: 'L2'
+    factor: 0                  # L2 权重因子（设为 0 表示关闭正则化）
+
+Architecture:
+  # 模型结构配置
+  model_type: rec             # 模型类型（rec=OCR，det=检测）
+  algorithm: CRNN             # 具体算法（CRNN 是经典 OCR 网络）
+  Transform:                  # 数据变换（空表示无额外变换）
+  Backbone:                   # 主干网络
+    name: MobileNetV3         # 使用 MobileNetV3 作为特征提取器
+    scale: 0.5                # 输入图像缩放比例（减少计算量）
+    model_name: large          # 选择 large 版本（更大的参数量，效果更好）
+  Neck:                       # 颈部网络（连接 backbone 和 head）
+    name: SequenceEncoder      # 序列编码器（用于 RNN 处理）
+    encoder_type: rnn           # 使用 RNN（GRU 更推荐）
+    hidden_size: 96            # RNN 隐藏层大小
+  Head:                       # 头部网络
+    name: CTCHead              # CTC 连接符（OCR 核心组件）
+    fc_decay: 0                # 全连接层权重衰减（设为 0 关闭）
+
+Loss:
+    # 损失配置
+  name: CTCLoss               # 损失函数（CTC 损失）
+
+PostProcess:
+    # 后处理配置
+  name: CTCLabelDecode # 解码器（CTC 解码器）
+
+Metric:
+    # 指标配置
+  name: RecMetric # 指标计算（OCR 识别指标）
+  main_indicator: acc # 主要指标（准确率）
+
+Train:
+  dataset:
+    name: SimpleDataSet        # 数据集类型（简单数据集）
+    data_dir: ./train_data/ic15_data/  # 训练图像目录
+    label_file_list: [".train_data/ic15_data/rec_gt_train.txt"]  # 标签文件路径
+    transforms:  # 数据增强和预处理步骤
+      - DecodeImage:  # 图像解码（BGR 转 RGB）
+          img_mode: BGR
+          channel_first: False
+      - CTCLabelEncode:  # 标签编码（转换为整数序列）
+      - RecResizeImg:   # 图像缩放（调整为 [3,32,100]）
+          image_shape: [3, 32, 100]
+      - KeepKeys:      # 保留哪些字段（image,image,label,length）
+          keep_keys: ['image', 'label', 'length']
+  loader:
+    shuffle: True             # 是否打乱数据
+    batch_size_per_card: 256   # 每个 GPU 的 batch 大小（总 batch_size = 256 * 显存卡数量）
+    drop_last: True            # 最后不足一个 batch 时丢弃
+    num_workers: 8             # 数据加载线程数
+    use_shared_memory: False   # 是否共享内存
+
+Eval:
+  dataset:
+    name: SimpleDataSet        # 测试数据集类型
+    data_dir: ./train_data/ic15_data
+    label_file_list: [".train_data/ic15_data/rec_gt_test.txt"]
+    transforms:  # 与训练相同的预处理步骤
+      - DecodeImage:
+      - CTCLabelEncode:
+      - RecResizeImg:
+          image_shape: [3, 32, 100]
+      - KeepKeys:
+          keep_keys: ['image', 'label', 'length']
+  loader:
+    shuffle: False             # 测试时不打乱数据
+    drop_last: False            # 保留所有样本
+    batch_size_per_card: 256
+    num_workers: 4

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uploaded Images</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="d-flex flex-column min-vh-100">
+<div class="container my-auto">
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            <h1 class="mb-4">Uploaded Images</h1>
+            {% if images %}
+                <div class="row">
+                    {% for image in images %}
+                        <div class="col-md-4 mb-4">
+                            <img src="{{ url_for('uploaded_file', filename=image) }}" class="img-fluid" alt="{{ image }}">
+                            <p>{{ image }}</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p>No images have been uploaded yet.</p>
+            {% endif %}
+            <a href="/upload" class="btn btn-primary">Back to Upload</a>
+        </div>
+    </div>
+</div>
+</body>
+</html>

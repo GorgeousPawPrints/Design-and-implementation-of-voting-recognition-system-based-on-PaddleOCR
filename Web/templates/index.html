@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Upload</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="d-flex flex-column min-vh-100">
+<div class="container my-auto">
+    <div class="row justify-content-center">
+        <div class="col-md-6 text-center">
+            <h1 class="mb-4">Upload Your Image</h1>
+            <form id="uploadForm">
+                <div class="custom-file mb-3">
+                    <input type="file" class="custom-file-input" id="image" name="image">
+                    <label class="custom-file-label" for="image">Choose file</label>
+                </div>
+                <button type="submit" class="btn btn-primary">Upload</button>
+            </form>
+            <div id="result" class="mt-4"></div>
+            <!-- 添加显示图片的按钮 -->
+            <a href="/images" class="btn btn-secondary mt-3 d-block">Show Uploaded Images</a>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.2/axios.min.js"></script>
+<script>
+document.getElementById('uploadForm').onsubmit = async function(e) {
+    e.preventDefault();
+    const formData = new FormData();
+    formData.append('image', document.getElementById('image').files[0]);
+
+    try {
+        let response = await axios.post('http://127.0.0.1:5000/upload', formData);
+        document.getElementById('result').innerHTML = `<p>${response.data.message}</p><p>New Size: ${response.data.size[0]}x${response.data.size[1]}</p>`;
+    } catch (error) {
+        console.error(error);
+        document.getElementById('result').innerText = 'An error occurred while processing the image.';
+    }
+};
+</script>
+</body>
+</html>
