@@ -5,22 +5,40 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Image Upload</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        #csvResult {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            white-space: pre-wrap;
+        }
+        .btn-spacing {
+            margin-right: 10px;
+        }
+    </style>
 </head>
 <body class="d-flex flex-column min-vh-100">
 <div class="container my-auto">
     <div class="row justify-content-center">
-        <div class="col-md-6 text-center">
+        <div class="col-md-8 text-center">
             <h1 class="mb-4">Upload Your Image</h1>
             <form id="uploadForm">
                 <div class="custom-file mb-3">
                     <input type="file" class="custom-file-input" id="image" name="image">
                     <label class="custom-file-label" for="image">Choose file</label>
                 </div>
-                <button type="submit" class="btn btn-primary">Upload</button>
+                <div class="mb-3">
+                    <button type="submit" class="btn btn-primary btn-spacing">Upload</button>
+                    <a href="/information" class="btn btn-info btn-spacing">Get OCR Results (CSV)</a>
+                    <a href="/images" class="btn btn-secondary btn-spacing">Show Uploaded Images</a>
+                </div>
             </form>
             <div id="result" class="mt-4"></div>
-            <!-- 添加显示图片的按钮 -->
-            <a href="/images" class="btn btn-secondary mt-3 d-block">Show Uploaded Images</a>
+            <div id="csvResultContainer" style="display: none;">
+                <h4>OCR Results (CSV Format)</h4>
+                <div id="csvResult"></div>
+            </div>
         </div>
     </div>
 </div>
@@ -40,6 +58,26 @@ document.getElementById('uploadForm').onsubmit = async function(e) {
         document.getElementById('result').innerText = 'An error occurred while processing the image.';
     }
 };
+
+// 添加获取CSV结果的按钮功能
+document.getElementById('getCSVBtn').onclick = async function() {
+    try {
+        const response = await axios.get('http://127.0.0.1:5000/get_ocr_csv');
+        document.getElementById('csvResult').textContent = response.data;
+        document.getElementById('csvResultContainer').style.display = 'block';
+    } catch (error) {
+        console.error(error);
+        document.getElementById('csvResult').textContent = 'Failed to load OCR results.';
+        document.getElementById('csvResultContainer').style.display = 'block';
+    }
+};
+
+// 显示选中的文件名
+document.getElementById('image').addEventListener('change', function(e) {
+    var fileName = e.target.files[0] ? e.target.files[0].name : "Choose file";
+    var nextSibling = e.target.nextElementSibling;
+    nextSibling.innerText = fileName;
+});
 </script>
 </body>
 </html>
